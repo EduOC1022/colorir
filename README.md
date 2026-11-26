@@ -1,5 +1,7 @@
 # 🎨 Colorir
 
+**Jogar:** https://eduoc1022.github.io/colorir/ (dá para instalar no celular)
+
 Jogo de colorir por números no navegador, sem anúncios e sem dependências.
 HTML + CSS + JavaScript puro, sem build. App instalável que funciona offline (PWA),
 com tudo salvo no próprio navegador do usuário.
@@ -68,4 +70,5 @@ Depois abra http://localhost:8000.
 
 ## Publicar (GitHub Pages)
 
-Repositório público → *Settings → Pages → Deploy from branch → `main` / root*.
+Publicado no GitHub Pages (repositório público, gratuito): *Settings → Pages → Deploy from
+branch → `main` / root*. Cada `git push` atualiza o site em 1–2 minutos.
