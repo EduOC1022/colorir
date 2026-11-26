@@ -1,61 +1,60 @@
 # 🎨 Colorir
 
-Jogo de pintar no navegador, sem anúncios e sem dependências.
-HTML + CSS + JavaScript puro, sem build. Cada imagem só é baixada quando aberta.
+Jogo de colorir por números no navegador, sem anúncios e sem dependências.
+HTML + CSS + JavaScript puro, sem build. App instalável que funciona offline (PWA),
+com tudo salvo no próprio navegador do usuário.
 
-## Modos
+## Como jogar
 
-**Colorir por números** (principal): a imagem colorida vira um quebra-cabeça.
-Cada área tem um número; escolha a cor na paleta e toque nas áreas com aquele número.
-Ao acertar, a área revela as cores originais da imagem.
+Cada imagem vira um quebra-cabeça: cada área tem um número; escolha a cor na paleta e
+toque nas áreas com aquele número. Ao acertar, a área revela as cores originais.
 
 - 💡 dica: dá zoom numa área que falta da cor escolhida
-- os números aparecem conforme você dá zoom
-- ao terminar uma cor, passa sozinho para a próxima
+- os números aparecem conforme você dá zoom; ao terminar uma cor, passa para a próxima
+- arraste para mover; roda do mouse ou pinça (2 dedos) para zoom; `+`, `-`, `0` no teclado
+- "Abrir imagem…" transforma qualquer imagem do computador em colorir por números
 
-**Pintura livre**: desenhos preto e branco, pinte com qualquer cor (com desfazer/refazer).
+## De onde vêm os desenhos
 
-Controles: arraste para mover; roda do mouse ou pinça (2 dedos) para zoom;
-`+`, `-`, `0` para zoom pelo teclado. O progresso é salvo sozinho no navegador.
-"Abrir imagem…" aceita qualquer imagem do computador: colorida vira colorir por números,
-preto e branco vira pintura livre.
+- **Pinturas famosas** em domínio público (Van Gogh, Hokusai, Vermeer, Monet, Klimt,
+  da Vinci...), baixadas do [Wikimedia Commons](https://commons.wikimedia.org) em boa
+  resolução (1400 px). Lista em `pinturas/pinturas.json`. Para incluir outra, adicione o
+  nome exato do arquivo no Commons (confira se é domínio público).
+- **Mandalas coloridas** criadas pelo próprio app (`js/fontes.js`): simetria radial,
+  paletas harmônicas, sem limite e funcionam offline.
 
-## Seus desenhos, favoritos e IA
+"✨ Mais desenhos" acrescenta um lote de **10** (6 pinturas + 4 mandalas, intercaladas;
+quando as pinturas acabam, só mandalas). Cada desenho aparece assim que fica pronto e o lote
+inteiro leva cerca de **7–15 s**. O botão só fica disponível quando o lote anterior terminou.
 
-- **Para pintar**: grade com todos os seus desenhos. "✨ Mais 10 desenhos" acrescenta 10
-  (primeiro os do catálogo do app, depois criados por IA), sem tirar os que já estão na tela.
-- Os desenhos da IA são criados em segundo plano e só aparecem quando ficam prontos.
-  O botão só fica disponível quando dá para gerar: com o lote anterior terminado, abaixo de
-  100 desenhos sem pintar e com internet (ou ainda restando desenhos do catálogo).
+### Por que não IA?
+Testamos o Pollinations.ai (gratuito, sem chave): o limite é **1 imagem a cada ~45 s**,
+ou seja, ~7,5 min para 10 desenhos. As pinturas do Commons levam 0,5–2 s cada e as mandalas
+~0,15 s. Com uma chave paga de IA dá para voltar a gerar por IA (fonte separada em `js/fontes.js`).
+
+## Seus desenhos e favoritos
+
 - Limite de **100 desenhos sem pintar**.
-- **⭐ Favoritos**: até **30** (pintados ou não). Cada desenho entra uma vez só — cópias do
-  mesmo desenho (mesmo arquivo ou mesma imagem, comparada pelo SHA-256) são recusadas, e abrir
-  a mesma imagem do computador de novo reaproveita a existente. Com 30, para guardar outro é
-  preciso liberar um espaço; nessa hora dá para baixar o desenho antes de removê-lo.
+- **⭐ Favoritos**: até **30** (pintados ou não), cada desenho uma vez só (sem cópias).
+  Com 30, para guardar outro é preciso liberar um espaço, podendo baixar o desenho antes.
 - Desenhos já pintados que não estão nos favoritos saem da lista quando você pede mais desenhos.
-- IA: [Pollinations.ai](https://pollinations.ai) (gratuito, sem chave; 1 imagem a cada ~45 s,
-  então um lote de 10 leva uns 7 minutos). Falhas passageiras são tentadas de novo.
-  Para trocar de serviço, edite `js/ia.js`.
+- Na grade: não começado aparece só com contorno; em andamento, como você deixou; completo, colorido.
 
 ## App instalável e offline (PWA)
 
-- Sem servidor nem banco externo: tudo fica no navegador (IndexedDB), incluindo as imagens geradas.
+- Tudo fica no navegador (IndexedDB), incluindo as imagens baixadas.
 - `manifest.webmanifest` + ícones: dá para instalar (botão "Instalar app" ou menu do navegador).
-- `sw.js` (service worker): o app abre offline; imagens do catálogo ficam em cache depois de vistas.
+- `sw.js` (service worker): o app abre offline.
 - **Ao publicar uma mudança, aumente `VERSAO` em `sw.js`**: o app mostra "Nova versão disponível".
 
-## Como funciona por dentro
+## Por dentro
 
-- `js/acervo.js`: regras de lotes, limites, favoritos e fila da IA; `js/bd.js`: IndexedDB.
-
-- `js/numeros-gerador.js` (roda num Web Worker, ~0,3–0,5 s por imagem): k-means reduz a imagem a K cores,
-  um filtro de maioria limpa pixels soltos, áreas pequenas ou finas demais são fundidas com a
-  vizinha, e uma transformada de distância acha o melhor ponto para cada número.
-  É determinístico: a mesma imagem sempre gera as mesmas áreas.
-- `js/numeros.js`: desenha as áreas, revela a imagem original e põe os números numa camada
-  separada no tamanho da tela (só os visíveis e legíveis).
-- `js/pintura.js`: pintura livre por regiões fechadas pelos traços.
-- Progresso salvo: um bitset em base64 (dezenas de bytes por imagem).
+- `js/acervo.js`: lotes, limites, favoritos e preparo dos desenhos; `js/bd.js`: IndexedDB
+- `js/fontes.js`: download das pinturas, gerador de mandalas e miniatura de contorno
+- `js/numeros-gerador.js` (num Web Worker, ~0,5–0,8 s por imagem): k-means reduz a imagem a
+  K cores, filtro de maioria, fusão de áreas pequenas/finas e transformada de distância para
+  posicionar os números. Determinístico: a mesma imagem sempre gera as mesmas áreas.
+- `js/numeros.js`: o jogo; `js/pintura.js`: pintura livre (para desenhos preto e branco enviados)
 
 ## Rodar localmente
 
@@ -63,47 +62,8 @@ preto e branco vira pintura livre.
 python3 -m http.server 8000
 ```
 
-Depois abra http://localhost:8000 (pelo `file://` não funciona).
-
-## Adicionar imagens
-
-### Colorir por números
-1. Coloque a imagem em `numeros/` (JPG, PNG ou SVG; ~1000 px no lado maior).
-2. Crie uma miniatura de ~320 px em `numeros/mini/` (para SVG pode usar o próprio arquivo).
-3. Adicione em `numeros/numeros.json`:
-   ```json
-   { "id": "meu-id", "titulo": "Título", "arquivo": "meu-id.jpg", "mini": "mini/meu-id.jpg",
-     "categoria": "Arte", "cores": 16, "fonte": "https://...", "licenca": "CC0" }
-   ```
-   `cores` = quantidade de cores (12–20 costuma ficar bom). Opcional: `minimo` = área mínima
-   em pixels (padrão ~80); aumente para menos áreas e um jogo mais rápido.
-4. Gere a miniatura "sem cor" (só contorno), que a galeria mostra até você começar a pintar
-   (precisa de Node 18+ e GraphicsMagick):
-   ```bash
-   node ferramentas/gerar-contornos.mjs meu-id
-   ```
-
-Na galeria: imagem não começada aparece só com contorno; em andamento, mostra como você
-deixou; completa, aparece colorida.
-
-Imagens com cores chapadas (ilustrações, vetores) geram os melhores quebra-cabeças.
-
-### Pintura livre
-Coloque o PNG de traço preto em `desenhos/`, a miniatura em `desenhos/mini/` e uma entrada
-em `desenhos/desenhos.json`.
-
-### Onde achar imagens livres
-- [Wikimedia Commons](https://commons.wikimedia.org): obras de arte antigas são domínio público
-- [Openclipart](https://openclipart.org): tudo é CC0, ótimo para ilustrações coloridas
-- [FreeSVG](https://freesvg.org) e [Public Domain Vectors](https://publicdomainvectors.org)
-- No GitHub, só use repositórios com arquivo LICENSE que permita o uso (CC0, CC-BY, domínio público)
-
-## Créditos
-
-Todas as imagens são domínio público ou CC0. As fontes estão no campo `fonte` de
-`numeros/numeros.json` e `desenhos/desenhos.json`. Gatinho, peixe, coruja e casinha
-foram feitos para este projeto (CC0).
+Depois abra http://localhost:8000.
 
 ## Publicar (GitHub Pages)
 
-*Settings → Pages → Deploy from branch → `main` / root* (repositório público).
+Repositório público → *Settings → Pages → Deploy from branch → `main` / root*.

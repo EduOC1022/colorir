@@ -41,6 +41,11 @@ export const bd = {
       const r = s.get(id);
       r.onsuccess = () => r.result && s.put({ ...r.result, ...mudancas });
     }),
+  // apaga tudo (reset do acervo)
+  limpar: () => Promise.all([
+    tx('desenhos', 'readwrite', (s) => void s.clear()),
+    tx('meta', 'readwrite', (s) => void s.clear()),
+  ]),
   meta: async (k, padrao) => (await tx('meta', 'readonly', (s) => s.get(k)))?.v ?? padrao,
   definirMeta: (k, v) => tx('meta', 'readwrite', (s) => void s.put({ k, v })),
 };

@@ -43,39 +43,22 @@ function urlDe(rec, campo) {
   if (!urls.has(k)) urls.set(k, URL.createObjectURL(blob));
   return urls.get(k);
 }
-const fonteDe = (rec) => rec.src || urlDe(rec, 'imagem');
+const fonteDe = (rec) => urlDe(rec, 'imagem');
 
 // Galeria: por números aparece sem cor até começar; depois como você deixou; colorida quando pronta.
 function miniaturaDe(rec) {
   if (rec.status !== 'pronto') return '';
-  if (rec.pct >= 100) return rec.modo === 'numeros' ? rec.mini || urlDe(rec, 'imagem') : rec.retrato || rec.mini || urlDe(rec, 'imagem');
+  if (rec.pct >= 100) return rec.modo === 'numeros' ? urlDe(rec, 'imagem') : rec.retrato || urlDe(rec, 'imagem');
   if (rec.retrato) return rec.retrato;
-  if (rec.modo === 'numeros') return rec.contornoUrl || urlDe(rec, 'contorno');
-  return rec.mini || urlDe(rec, 'imagem');
+  if (rec.modo === 'numeros') return urlDe(rec, 'contorno');
+  return urlDe(rec, 'imagem');
 }
 
 /* ---------------- Início ---------------- */
 
 async function iniciar() {
-  const [n, d] = await Promise.all([
-    fetch('numeros/numeros.json').then((r) => r.json()),
-    fetch('desenhos/desenhos.json').then((r) => r.json()),
-  ]);
-  // catálogo intercalado: fáceis e arte por números, com desenhos livres no meio
-  const porNumeros = n.map((x) => ({
-    id: `cat:n:${x.id}`, modo: 'numeros', titulo: x.titulo, cores: x.cores, minimo: x.minimo,
-    src: `numeros/${x.arquivo}`, mini: `numeros/${x.mini}`, contornoUrl: `numeros/contorno/${x.id}.png`,
-  }));
-  const livres = d.map((x) => ({
-    id: `cat:d:${x.id}`, modo: 'livre', titulo: x.titulo, src: `desenhos/${x.id}.png`, mini: `desenhos/mini/${x.id}.png`,
-  }));
-  const catalogo = [];
-  while (porNumeros.length || livres.length) {
-    catalogo.push(...porNumeros.splice(0, 3));
-    if (livres.length) catalogo.push(livres.shift());
-  }
-
-  acervo = new Acervo(catalogo);
+  const pinturas = await fetch('pinturas/pinturas.json').then((r) => r.json());
+  acervo = new Acervo(pinturas);
   let timer = 0;
   acervo.aoMudar = () => {
     clearTimeout(timer);
@@ -131,6 +114,12 @@ function cartao(rec) {
   const src = miniaturaDe(rec);
   if (src) a.querySelector('img').src = src;
   a.querySelector('.nome').textContent = rec.titulo;
+  if (rec.autor) {
+    const autor = document.createElement('small');
+    autor.className = 'autor';
+    autor.textContent = rec.autor;
+    a.querySelector('.nome').after(autor);
+  }
   if (rec.pct > 0) {
     const selo = document.createElement('span');
     selo.className = 'selo';
@@ -573,9 +562,11 @@ if ('serviceWorker' in navigator) {
       });
     });
   });
+  // recarrega só numa atualização (não na primeira instalação, que não muda nada na página)
+  const tinhaControlador = !!navigator.serviceWorker.controller;
   let recarregando = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (recarregando) return;
+    if (recarregando || !tinhaControlador) return;
     recarregando = true;
     salvarAgora();
     location.reload();

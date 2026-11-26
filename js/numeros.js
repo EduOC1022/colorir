@@ -2,7 +2,7 @@
 // A imagem colorida é dividida em áreas (no worker). Cada área mostra um número;
 // quando o jogador toca com a cor certa, a área revela os pixels originais.
 
-const TAM = 1000; // lado maior de trabalho
+const TAM = 1400; // lado maior de trabalho (boa resolução para as pinturas)
 const COR_LINHA = [110, 110, 110];
 const COR_DESTAQUE = [200, 200, 200];
 const COR_DESTAQUE2 = [225, 225, 225];

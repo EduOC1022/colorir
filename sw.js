@@ -1,13 +1,11 @@
 // Service worker: deixa o app instalável e funcionando offline.
 //
 // - "casca" do app (HTML, CSS, JS, ícones, catálogos) é pré-baixada e servida do cache.
-// - imagens do catálogo vão para o cache na primeira vez que são vistas.
-// - desenhos gerados por IA ficam no IndexedDB (não passam por aqui).
+// - os desenhos (pinturas baixadas e mandalas) ficam no IndexedDB, não passam por aqui.
 //
 // Ao publicar uma mudança no app, aumente VERSAO para os usuários receberem a atualização.
-const VERSAO = 'v2';
+const VERSAO = 'v3';
 const CASCA = `colorir-casca-${VERSAO}`;
-const IMAGENS = 'colorir-imagens';
 
 const ARQUIVOS = [
   './',
@@ -17,13 +15,12 @@ const ARQUIVOS = [
   'js/app.js',
   'js/acervo.js',
   'js/bd.js',
-  'js/ia.js',
+  'js/fontes.js',
   'js/numeros.js',
   'js/numeros-gerador.js',
   'js/numeros-worker.js',
   'js/pintura.js',
-  'numeros/numeros.json',
-  'desenhos/desenhos.json',
+  'pinturas/pinturas.json',
   'icones/icone.svg',
   'icones/icone-192.png',
   'icones/icone-512.png',
@@ -53,25 +50,11 @@ self.addEventListener('message', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== location.origin) return; // IA e outros sites: direto na rede
+  if (req.method !== 'GET' || url.origin !== location.origin) return; // Wikimedia e outros sites: direto na rede
 
   // Navegação: sempre abre o app (mesmo offline)
   if (req.mode === 'navigate') {
     e.respondWith(caches.match('index.html').then((r) => r || fetch(req)));
-    return;
-  }
-
-  // Imagens do catálogo: cache primeiro, guarda ao baixar
-  if (/\/(numeros|desenhos)\/.+\.(png|jpe?g|svg|webp)$/.test(url.pathname)) {
-    e.respondWith(
-      caches.open(IMAGENS).then(async (c) => {
-        const salva = await c.match(req);
-        if (salva) return salva;
-        const resp = await fetch(req);
-        if (resp.ok) c.put(req, resp.clone());
-        return resp;
-      }),
-    );
     return;
   }
 
