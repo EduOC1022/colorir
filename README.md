@@ -22,7 +22,7 @@ preto e branco vira pintura livre.
 
 ## Como funciona por dentro
 
-- `js/numeros-worker.js` (Web Worker, ~0,3–0,5 s por imagem): k-means reduz a imagem a K cores,
+- `js/numeros-gerador.js` (roda num Web Worker, ~0,3–0,5 s por imagem): k-means reduz a imagem a K cores,
   um filtro de maioria limpa pixels soltos, áreas pequenas ou finas demais são fundidas com a
   vizinha, e uma transformada de distância acha o melhor ponto para cada número.
   É determinístico: a mesma imagem sempre gera as mesmas áreas.
@@ -51,6 +51,14 @@ Depois abra http://localhost:8000 (pelo `file://` não funciona).
    ```
    `cores` = quantidade de cores (12–20 costuma ficar bom). Opcional: `minimo` = área mínima
    em pixels (padrão ~80); aumente para menos áreas e um jogo mais rápido.
+4. Gere a miniatura "sem cor" (só contorno), que a galeria mostra até você começar a pintar
+   (precisa de Node 18+ e GraphicsMagick):
+   ```bash
+   node ferramentas/gerar-contornos.mjs meu-id
+   ```
+
+Na galeria: imagem não começada aparece só com contorno; em andamento, mostra como você
+deixou; completa, aparece colorida.
 
 Imagens com cores chapadas (ilustrações, vetores) geram os melhores quebra-cabeças.
 

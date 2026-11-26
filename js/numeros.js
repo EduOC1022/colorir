@@ -37,7 +37,7 @@ export class Numeros {
     const original = t.getImageData(0, 0, W, H).data;
 
     const dados = await new Promise((ok, falha) => {
-      const w = new Worker(new URL('./numeros-worker.js', import.meta.url));
+      const w = new Worker(new URL('./numeros-worker.js', import.meta.url), { type: 'module' });
       w.onmessage = (e) => { ok(e.data); w.terminate(); };
       w.onerror = (e) => { falha(e); w.terminate(); };
       const px = original.slice();

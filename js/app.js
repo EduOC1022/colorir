@@ -20,6 +20,7 @@ const LIVRE = 'Pintura livre';
 
 const hexParaInt = (h) => parseInt(h.slice(1), 16);
 const chave = (d) => (d.modo === 'numeros' ? `colorir:n:${d.id}` : `colorir:${d.id}`);
+const chaveMini = (d) => `${chave(d)}:mini`;
 
 let itens = [];
 let atual = null; // item aberto: { id, modo, titulo, src, salvar, cores? }
@@ -40,7 +41,7 @@ async function iniciar() {
     fetch('desenhos/desenhos.json').then((r) => r.json()),
   ]);
   itens = [
-    ...n.map((x) => ({ ...x, modo: 'numeros', src: `numeros/${x.arquivo}`, mini: `numeros/${x.mini}`, rota: `n/${x.id}` })),
+    ...n.map((x) => ({ ...x, modo: 'numeros', src: `numeros/${x.arquivo}`, mini: `numeros/${x.mini}`, contorno: `numeros/contorno/${x.id}.png`, rota: `n/${x.id}` })),
     ...d.map((x) => ({ ...x, modo: 'livre', categoria: LIVRE, src: `desenhos/${x.id}.png`, mini: `desenhos/mini/${x.id}.png`, rota: `d/${x.id}` })),
   ];
   montarFiltros();
@@ -78,12 +79,15 @@ function montarGaleria(categoria) {
       a.className = 'cartao';
       a.href = `#/${d.rota}`;
       a.innerHTML = `<img loading="lazy" decoding="async" alt=""><span></span>`;
-      a.querySelector('img').src = d.mini;
       a.querySelector('span').textContent = d.titulo;
       const salvo = localStorage.getItem(chave(d));
+      const pct = salvo && d.modo === 'numeros' ? JSON.parse(salvo).pct : null;
+      // Por números: sem cor até começar; depois o retrato do progresso; colorida quando pronta.
+      const foto = salvo && localStorage.getItem(chaveMini(d));
+      a.querySelector('img').src =
+        pct >= 100 ? d.mini : foto || (d.modo === 'numeros' ? d.contorno : d.mini);
       if (salvo) {
         const selo = document.createElement('span');
-        const pct = d.modo === 'numeros' ? JSON.parse(salvo).pct : null;
         selo.className = 'selo';
         selo.textContent = pct >= 100 ? '✓ pronto' : pct != null ? `${pct}%` : 'continuar';
         a.append(selo);
@@ -197,12 +201,34 @@ function salvarAgora() {
   const m = motor();
   if (!m.rot) return;
   const k = chave(atual);
+  let estado = null;
   if (atual.modo === 'numeros') {
     const p = numeros.progresso;
-    if (p > 0) localStorage.setItem(k, JSON.stringify({ ...numeros.exportarEstado(), pct: Math.floor(p * 100) }));
-    else localStorage.removeItem(k);
-  } else if (livre.temPintura) localStorage.setItem(k, JSON.stringify(livre.exportarEstado()));
-  else localStorage.removeItem(k);
+    if (p > 0) estado = { ...numeros.exportarEstado(), pct: Math.floor(p * 100) };
+  } else if (livre.temPintura) estado = livre.exportarEstado();
+  try {
+    if (estado) {
+      localStorage.setItem(k, JSON.stringify(estado));
+      localStorage.setItem(chaveMini(atual), retrato());
+    } else {
+      localStorage.removeItem(k);
+      localStorage.removeItem(chaveMini(atual));
+    }
+  } catch (err) {
+    console.warn('Não foi possível salvar o progresso', err); // armazenamento cheio
+  }
+}
+
+// Miniatura pequena do estado atual, para a galeria (~10 KB).
+function retrato() {
+  const esc = 240 / Math.max(canvas.width, canvas.height);
+  const c = document.createElement('canvas');
+  c.width = Math.round(canvas.width * esc);
+  c.height = Math.round(canvas.height * esc);
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(canvas, 0, 0, c.width, c.height);
+  return c.toDataURL('image/webp', 0.75);
 }
 window.addEventListener('pagehide', salvarAgora);
 
