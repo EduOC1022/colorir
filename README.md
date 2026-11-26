@@ -1,53 +1,75 @@
 # 🎨 Colorir
 
-Jogo de pintar desenhos no navegador, sem anúncios e sem dependências.
-HTML + CSS + JavaScript puro, sem build, total ~2,5 MB (cada desenho só é baixado quando aberto).
+Jogo de pintar no navegador, sem anúncios e sem dependências.
+HTML + CSS + JavaScript puro, sem build. Cada imagem só é baixada quando aberta.
 
-## Como funciona
+## Modos
 
-- Toque/clique numa área para pintá-la com a cor escolhida.
-- Arraste para mover; roda do mouse ou pinça (2 dedos) para zoom.
-- Ctrl+Z / Ctrl+Y desfazem e refazem; `+`, `-` e `0` controlam o zoom.
-- O progresso é salvo sozinho no navegador (localStorage), e o PNG pode ser baixado.
-- "Abrir imagem…" pinta qualquer desenho do seu computador (esses não ficam salvos).
+**Colorir por números** (principal): a imagem colorida vira um quebra-cabeça.
+Cada área tem um número; escolha a cor na paleta e toque nas áreas com aquele número.
+Ao acertar, a área revela as cores originais da imagem.
 
-Por dentro (`js/pintura.js`): ao abrir, a imagem é dividida uma única vez em regiões
-(áreas claras fechadas pelos traços). Pintar só troca a cor de uma região e redesenha
-o retângulo dela, o que leva poucos milissegundos. A cor é multiplicada pela luminosidade
-do traço, então as bordas ficam lisas. O progresso salvo é só uma lista `[região, cor]`.
+- 💡 dica: dá zoom numa área que falta da cor escolhida
+- os números aparecem conforme você dá zoom
+- ao terminar uma cor, passa sozinho para a próxima
+
+**Pintura livre**: desenhos preto e branco, pinte com qualquer cor (com desfazer/refazer).
+
+Controles: arraste para mover; roda do mouse ou pinça (2 dedos) para zoom;
+`+`, `-`, `0` para zoom pelo teclado. O progresso é salvo sozinho no navegador.
+"Abrir imagem…" aceita qualquer imagem do computador: colorida vira colorir por números,
+preto e branco vira pintura livre.
+
+## Como funciona por dentro
+
+- `js/numeros-worker.js` (Web Worker, ~0,3–0,5 s por imagem): k-means reduz a imagem a K cores,
+  um filtro de maioria limpa pixels soltos, áreas pequenas ou finas demais são fundidas com a
+  vizinha, e uma transformada de distância acha o melhor ponto para cada número.
+  É determinístico: a mesma imagem sempre gera as mesmas áreas.
+- `js/numeros.js`: desenha as áreas, revela a imagem original e põe os números numa camada
+  separada no tamanho da tela (só os visíveis e legíveis).
+- `js/pintura.js`: pintura livre por regiões fechadas pelos traços.
+- Progresso salvo: um bitset em base64 (dezenas de bytes por imagem).
 
 ## Rodar localmente
-
-Precisa de um servidor HTTP (abrir o `index.html` direto pelo `file://` não funciona):
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Depois abra http://localhost:8000.
+Depois abra http://localhost:8000 (pelo `file://` não funciona).
 
-## Adicionar desenhos
+## Adicionar imagens
 
-1. Coloque o PNG (traço preto sobre fundo branco, de preferência ≤ 1600 px) em `desenhos/<id>.png`.
-2. Crie uma miniatura de ~320 px em `desenhos/mini/<id>.png`.
-3. Adicione uma entrada em `desenhos/desenhos.json`:
+### Colorir por números
+1. Coloque a imagem em `numeros/` (JPG, PNG ou SVG; ~1000 px no lado maior).
+2. Crie uma miniatura de ~320 px em `numeros/mini/` (para SVG pode usar o próprio arquivo).
+3. Adicione em `numeros/numeros.json`:
    ```json
-   { "id": "meu-desenho", "titulo": "Meu desenho", "categoria": "Animais", "fonte": "https://...", "licenca": "CC0" }
+   { "id": "meu-id", "titulo": "Título", "arquivo": "meu-id.jpg", "mini": "mini/meu-id.jpg",
+     "categoria": "Arte", "cores": 16, "fonte": "https://...", "licenca": "CC0" }
    ```
+   `cores` = quantidade de cores (12–20 costuma ficar bom). Opcional: `minimo` = área mínima
+   em pixels (padrão ~80); aumente para menos áreas e um jogo mais rápido.
 
-Dica: as áreas precisam ser **fechadas** pelos traços; se a linha tiver um buraco, a tinta "vaza".
+Imagens com cores chapadas (ilustrações, vetores) geram os melhores quebra-cabeças.
 
-### Onde achar desenhos livres
+### Pintura livre
+Coloque o PNG de traço preto em `desenhos/`, a miniatura em `desenhos/mini/` e uma entrada
+em `desenhos/desenhos.json`.
 
-- [Wikimedia Commons, Coloring pages](https://commons.wikimedia.org/wiki/Category:Coloring_pages): filtre por domínio público/CC0
-- [Openclipart](https://openclipart.org): tudo é CC0
-- [FreeSVG](https://freesvg.org) e [Public Domain Vectors](https://publicdomainvectors.org): domínio público
-- Livros de colorir do National Park Service (EUA): domínio público
+### Onde achar imagens livres
+- [Wikimedia Commons](https://commons.wikimedia.org): obras de arte antigas são domínio público
+- [Openclipart](https://openclipart.org): tudo é CC0, ótimo para ilustrações coloridas
+- [FreeSVG](https://freesvg.org) e [Public Domain Vectors](https://publicdomainvectors.org)
+- No GitHub, só use repositórios com arquivo LICENSE que permita o uso (CC0, CC-BY, domínio público)
 
-## Créditos dos desenhos
+## Créditos
 
-Todos são domínio público ou CC0. As fontes estão no campo `fonte` de `desenhos/desenhos.json`.
+Todas as imagens são domínio público ou CC0. As fontes estão no campo `fonte` de
+`numeros/numeros.json` e `desenhos/desenhos.json`. Gatinho, peixe, coruja e casinha
+foram feitos para este projeto (CC0).
 
 ## Publicar (GitHub Pages)
 
-Envie para o GitHub e ative em *Settings → Pages → Deploy from branch → `main` / root*.
+*Settings → Pages → Deploy from branch → `main` / root* (repositório público).

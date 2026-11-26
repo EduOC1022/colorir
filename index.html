@@ -14,7 +14,7 @@
   <section id="tela-galeria" class="tela">
     <header class="topo">
       <h1>🎨 Colorir</h1>
-      <label class="botao secundario">
+      <label class="botao secundario" title="Imagem colorida vira colorir por números; desenho preto e branco vira pintura livre">
         Abrir imagem…
         <input id="arquivo" type="file" accept="image/*" hidden>
       </label>
@@ -22,9 +22,8 @@
     <nav id="filtros" class="filtros"></nav>
     <main id="galeria" class="galeria"></main>
     <footer class="rodape">
-      Desenhos em domínio público / CC0 via
-      <a href="https://commons.wikimedia.org/wiki/Category:Coloring_pages" target="_blank" rel="noopener">Wikimedia Commons</a>.
-      Sem anúncios. Seu progresso fica salvo só neste navegador.
+      Imagens em domínio público / CC0 (fontes no repositório). Sem anúncios.
+      Seu progresso fica salvo só neste navegador.
     </footer>
   </section>
 
@@ -32,25 +31,37 @@
   <section id="tela-pintura" class="tela" hidden>
     <header class="topo barra">
       <button id="voltar" class="icone" title="Voltar" aria-label="Voltar">←</button>
-      <h2 id="titulo"></h2>
+      <div class="titulo-area">
+        <h2 id="titulo"></h2>
+        <div id="progresso" class="progresso so-numeros"><span></span></div>
+      </div>
       <div class="acoes">
-        <button id="desfazer" class="icone" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
-        <button id="refazer" class="icone" title="Refazer (Ctrl+Y)" aria-label="Refazer">↷</button>
+        <button id="dica" class="icone so-numeros" title="Dica: mostra uma área da cor escolhida" aria-label="Dica">💡</button>
+        <button id="desfazer" class="icone so-livre" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
+        <button id="refazer" class="icone so-livre" title="Refazer (Ctrl+Y)" aria-label="Refazer">↷</button>
         <button id="zoom-menos" class="icone" title="Diminuir zoom" aria-label="Diminuir zoom">−</button>
         <button id="zoom-mais" class="icone" title="Aumentar zoom" aria-label="Aumentar zoom">+</button>
         <button id="zoom-ajustar" class="icone" title="Ajustar à tela" aria-label="Ajustar à tela">⤢</button>
-        <button id="limpar" class="icone" title="Apagar tudo" aria-label="Apagar tudo">🗑</button>
+        <button id="limpar" class="icone" title="Recomeçar" aria-label="Recomeçar">🗑</button>
         <button id="baixar" class="icone" title="Baixar PNG" aria-label="Baixar PNG">⬇</button>
       </div>
     </header>
     <div class="area">
       <div id="visor" class="visor">
         <canvas id="tela"></canvas>
+        <canvas id="sobreposicao" class="sobreposicao"></canvas>
         <div id="carregando" class="carregando" hidden>Preparando o desenho…</div>
+        <div id="fim" class="fim" hidden>
+          <div class="fim-caixa">
+            <p>🎉 Pronto!</p>
+            <button id="fim-baixar" class="botao">Baixar imagem</button>
+            <button id="fim-fechar" class="botao secundario">Ver de perto</button>
+          </div>
+        </div>
       </div>
       <aside class="paleta">
         <div id="cores" class="cores"></div>
-        <div class="extra">
+        <div class="extra so-livre">
           <label class="cor-livre" title="Escolher outra cor">
             <input id="cor-livre" type="color" value="#ff7f50">
             <span>Outra cor</span>

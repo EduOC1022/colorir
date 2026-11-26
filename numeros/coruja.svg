@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="1000" height="1000">
+  <rect width="400" height="400" fill="#2b2d42"/>
+  <circle cx="320" cy="80" r="45" fill="#f1faee"/>
+  <circle cx="305" cy="70" r="8" fill="#d9e2dc"/>
+  <circle cx="335" cy="100" r="6" fill="#d9e2dc"/>
+  <circle cx="60" cy="60" r="4" fill="#f1faee"/>
+  <circle cx="120" cy="30" r="3" fill="#f1faee"/>
+  <circle cx="200" cy="70" r="3" fill="#f1faee"/>
+  <!-- galho -->
+  <path d="M0 320 h400 v28 h-400z" fill="#7f5539"/>
+  <path d="M300 320 q30 -30 60 -25 q-20 10 -30 25z" fill="#7f5539"/>
+  <ellipse cx="340" cy="300" rx="22" ry="10" fill="#52b788"/>
+  <!-- corpo -->
+  <ellipse cx="200" cy="235" rx="95" ry="105" fill="#9c6644"/>
+  <ellipse cx="200" cy="260" rx="60" ry="70" fill="#ede0d4"/>
+  <path d="M170 240 q8 10 16 0 M214 240 q8 10 16 0 M190 270 q8 10 16 0 M170 300 q8 10 16 0 M214 300 q8 10 16 0" stroke="#b08968" stroke-width="5" fill="none"/>
+  <!-- asas -->
+  <path d="M108 200 q-25 70 15 120 q20 -60 -15 -120z" fill="#7f5539"/>
+  <path d="M292 200 q25 70 -15 120 q-20 -60 15 -120z" fill="#7f5539"/>
+  <!-- orelhas -->
+  <path d="M125 120 l-5 -55 l50 35z" fill="#7f5539"/>
+  <path d="M275 120 l5 -55 l-50 35z" fill="#7f5539"/>
+  <!-- olhos -->
+  <circle cx="160" cy="160" r="40" fill="#ddb892"/>
+  <circle cx="240" cy="160" r="40" fill="#ddb892"/>
+  <circle cx="160" cy="160" r="28" fill="#ffffff"/>
+  <circle cx="240" cy="160" r="28" fill="#ffffff"/>
+  <circle cx="160" cy="160" r="17" fill="#f4a261"/>
+  <circle cx="240" cy="160" r="17" fill="#f4a261"/>
+  <circle cx="160" cy="160" r="9" fill="#1b1b1b"/>
+  <circle cx="240" cy="160" r="9" fill="#1b1b1b"/>
+  <!-- bico -->
+  <path d="M185 195 h30 l-15 28z" fill="#e9c46a"/>
+  <!-- pés -->
+  <path d="M160 322 l-12 12 h12 l6 -6 l6 6 h12 l-12 -12z" fill="#e9c46a"/>
+  <path d="M228 322 l-12 12 h12 l6 -6 l6 6 h12 l-12 -12z" fill="#e9c46a"/>
+</svg>

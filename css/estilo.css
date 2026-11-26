@@ -118,3 +118,45 @@ button { font: inherit; color: inherit; }
   .extra { flex-direction: column; align-items: stretch; }
   .recentes { grid-template-columns: repeat(5, 1fr); }
 }
+
+/* ---------- Modos ---------- */
+.modo-numeros .so-livre, .modo-livre .so-numeros { display: none !important; }
+
+.titulo-area { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.progresso { height: 6px; background: var(--borda); border-radius: 99px; overflow: hidden; max-width: 260px; }
+.progresso span { display: block; height: 100%; width: 0; background: var(--destaque); transition: width .3s; }
+
+.sobreposicao { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* Paleta numerada */
+.cores.numerada { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px; scrollbar-width: thin; }
+.num {
+  flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%; border: 0; cursor: pointer; padding: 3px;
+  background: conic-gradient(var(--destaque) calc(var(--p) * 1%), var(--borda) 0);
+  transition: transform .12s;
+}
+.num b {
+  display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%;
+  font-size: 1.05rem; border: 2px solid #fff;
+}
+.num[aria-pressed="true"] { transform: scale(1.12); box-shadow: 0 0 0 3px var(--texto); }
+.num.completa { opacity: .45; }
+.num.completa b::after { content: "✓"; }
+.num.completa b span { display: none; }
+.tremer { animation: tremer .3s; }
+@keyframes tremer { 25% { translate: -4px 0; } 75% { translate: 4px 0; } }
+
+@media (min-width: 900px) {
+  .cores.numerada { display: grid; grid-template-columns: repeat(4, 1fr); overflow: visible; }
+  .num { width: 100%; height: auto; aspect-ratio: 1; }
+}
+
+/* Fim */
+.fim { position: absolute; inset: 0; display: grid; place-items: center; background: #0003; }
+.fim-caixa {
+  background: var(--cartao); border-radius: var(--raio); padding: 20px 24px; text-align: center;
+  display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 40px #0004;
+}
+.fim-caixa p { margin: 0 0 4px; font-size: 1.6rem; font-weight: 700; }
+
+.cartao .pct { position: absolute; left: 8px; top: 8px; background: #fffd; font-size: .7rem; padding: 2px 6px; border-radius: 99px; margin: 0; }

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="1000" height="1000">
+  <rect width="400" height="400" fill="#bfe3f2"/>
+  <rect y="300" width="400" height="100" fill="#8fc98a"/>
+  <circle cx="330" cy="70" r="36" fill="#ffd166"/>
+  <path d="M30 100 q20 -20 50 -5 q25 -15 45 5 q15 15 -5 25 h-85 q-25 -10 -5 -25z" fill="#ffffff"/>
+  <!-- cauda -->
+  <path d="M265 300 q70 -10 60 -90 q-5 -30 15 -35 q20 0 15 35 q5 110 -85 115z" fill="#f4a259"/>
+  <!-- corpo -->
+  <ellipse cx="200" cy="280" rx="90" ry="70" fill="#f4a259"/>
+  <ellipse cx="200" cy="295" rx="50" ry="45" fill="#fde2c4"/>
+  <!-- patas -->
+  <ellipse cx="160" cy="345" rx="28" ry="16" fill="#e07a2f"/>
+  <ellipse cx="240" cy="345" rx="28" ry="16" fill="#e07a2f"/>
+  <!-- orelhas -->
+  <path d="M130 140 l-10 -75 l65 45z" fill="#e07a2f"/>
+  <path d="M270 140 l10 -75 l-65 45z" fill="#e07a2f"/>
+  <path d="M137 128 l-6 -45 l38 28z" fill="#f7b2bd"/>
+  <path d="M263 128 l6 -45 l-38 28z" fill="#f7b2bd"/>
+  <!-- cabeça -->
+  <ellipse cx="200" cy="165" rx="85" ry="72" fill="#f4a259"/>
+  <path d="M200 100 q-12 25 0 45 q12 -20 0 -45z" fill="#e07a2f"/>
+  <ellipse cx="200" cy="195" rx="42" ry="30" fill="#fde2c4"/>
+  <!-- olhos -->
+  <ellipse cx="165" cy="160" rx="16" ry="19" fill="#ffffff"/>
+  <ellipse cx="235" cy="160" rx="16" ry="19" fill="#ffffff"/>
+  <circle cx="168" cy="163" r="10" fill="#3a7d44"/>
+  <circle cx="232" cy="163" r="10" fill="#3a7d44"/>
+  <circle cx="169" cy="164" r="5" fill="#222222"/>
+  <circle cx="231" cy="164" r="5" fill="#222222"/>
+  <!-- nariz e boca -->
+  <path d="M190 183 h20 l-10 11z" fill="#d6456b"/>
+  <path d="M200 194 q-8 14 -20 8 M200 194 q8 14 20 8" stroke="#7a3b1e" stroke-width="3" fill="none"/>
+  <!-- laço -->
+  <path d="M200 232 l-35 -15 v32z" fill="#5c7cfa"/>
+  <path d="M200 232 l35 -15 v32z" fill="#5c7cfa"/>
+  <circle cx="200" cy="233" r="10" fill="#364fc7"/>
+</svg>
