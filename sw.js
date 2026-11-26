@@ -5,7 +5,7 @@
 // - desenhos gerados por IA ficam no IndexedDB (não passam por aqui).
 //
 // Ao publicar uma mudança no app, aumente VERSAO para os usuários receberem a atualização.
-const VERSAO = 'v1';
+const VERSAO = 'v2';
 const CASCA = `colorir-casca-${VERSAO}`;
 const IMAGENS = 'colorir-imagens';
 

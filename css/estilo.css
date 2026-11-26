@@ -173,13 +173,6 @@ button { font: inherit; color: inherit; }
   display: grid; place-items: center;
 }
 .cartao .estrela[aria-pressed="true"] { color: #f59e0b; }
-.cartao .estado {
-  position: absolute; inset: 8px 8px auto 8px; aspect-ratio: 1; display: grid; place-items: center;
-  background: #fff9; font-size: .8rem; font-weight: 600; text-align: center; border-radius: 8px;
-}
-.cartao.gerando img { filter: blur(6px) grayscale(1); opacity: .4; }
-.giro { width: 26px; height: 26px; border: 3px solid var(--borda); border-top-color: var(--destaque); border-radius: 50%; animation: girar 1s linear infinite; margin: 0 auto 6px; }
-@keyframes girar { to { transform: rotate(360deg); } }
 .vazio { grid-column: 1 / -1; text-align: center; padding: 40px 16px; color: var(--suave); }
 
 #favorito[aria-pressed="true"] { color: #f59e0b; }

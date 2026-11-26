@@ -17,6 +17,15 @@ const INTERVALO_IA = 46000; // plano gratuito da IA: 1 imagem a cada ~45 s
 const PROPORCAO_LIVRE = 5; // 1 em cada 5 gerados é para pintura livre
 
 const pintado = (r) => r.pct >= 100;
+
+// "Impressão digital" do desenho: o mesmo arquivo do catálogo ou a mesma imagem
+// (pelo SHA-256 do conteúdo) contam como o mesmo desenho.
+const digitalDe = (r) => r.hash || r.src || r.id;
+
+async function resumo(blob) {
+  const h = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 const ativo = (r) => r.status !== 'erro';
 
 export class Acervo {
@@ -38,14 +47,26 @@ export class Acervo {
     return (await bd.todos()).sort((a, b) => a.criado - b.criado);
   }
 
+  // Dá para pedir mais 10 agora? Não, se: chegou a 100, ainda está criando o lote
+  // anterior, ou está sem internet e o catálogo do app já acabou.
+  async podeGerar() {
+    if (this.fila.length || this.atual) return false;
+    const { guardados } = await this.contagem();
+    if (guardados >= LIMITE_GUARDADOS) return false;
+    if (navigator.onLine) return true;
+    const usados = new Set(await bd.meta('catalogoUsado', []));
+    return this.catalogo.some((i) => !usados.has(i.id));
+  }
+
   async favoritos() {
-    return (await bd.todos()).filter((r) => r.favorito).sort((a, b) => b.favoritadoEm - a.favoritadoEm);
+    return (await bd.todos()).filter((r) => r.favorito && r.status === 'pronto').sort((a, b) => b.favoritadoEm - a.favoritadoEm);
   }
 
   async contagem() {
     const todos = (await bd.todos()).filter(ativo);
     return {
-      guardados: todos.filter((r) => !pintado(r)).length,
+      guardados: todos.filter((r) => !pintado(r)).length, // inclui os que estão sendo criados
+      prontos: todos.filter((r) => !pintado(r) && r.status === 'pronto').length,
       favoritos: todos.filter((r) => r.favorito).length,
     };
   }
@@ -100,13 +121,6 @@ export class Acervo {
     this._processar();
   }
 
-  // Posição na fila: 0 = sendo criado agora; 1, 2... = aguardando; -1 = fora da fila.
-  posicaoNaFila(id) {
-    if (this.atual === id) return 0;
-    const i = this.fila.indexOf(id);
-    return i < 0 ? -1 : i + 1;
-  }
-
   // Uma geração por vez, respeitando o intervalo do plano gratuito (também entre recargas da página).
   async _processar() {
     if (this.processando) return;
@@ -133,7 +147,7 @@ export class Acervo {
     try {
       const imagem = await gerarImagem(rec);
       const contorno = rec.modo === 'numeros' ? await gerarContorno(imagem, rec.cores) : null;
-      await bd.atualizar(id, { imagem, contorno, status: 'pronto' });
+      await bd.atualizar(id, { imagem, contorno, hash: await resumo(imagem), status: 'pronto' });
     } catch (err) {
       if (err.esperar && tentativas > 0) {
         localStorage.setItem('colorir:iaUltima', String(Date.now() + err.esperar - INTERVALO_IA));
@@ -141,23 +155,31 @@ export class Acervo {
         return this._gerar(id, tentativas - 1);
       }
       console.warn('Falha ao gerar', id, err);
-      await bd.atualizar(id, { status: 'erro' });
+      const falhas = (rec.falhas || 0) + 1;
+      if (falhas < 3) {
+        // falha passageira (rede, serviço): tenta de novo no fim da fila
+        await bd.atualizar(id, { falhas });
+        this.fila.push(id);
+        return;
+      }
+      await bd.atualizar(id, { status: 'erro' }); // desiste: fica escondido e libera a vaga
     }
     this.aoMudar(id);
   }
 
-  async tentarDeNovo(id) {
-    await bd.atualizar(id, { status: 'gerando' });
-    this._enfileirar(id);
-  }
-
-  // Retorna true, ou false se os favoritos estão cheios.
+  // Cada desenho entra uma vez só nos favoritos — nem cópias do mesmo desenho.
+  // Retorna 'ok', 'cheio' (30 favoritos) ou 'repetido' (o mesmo desenho já está lá).
   async favoritar(id) {
-    const { favoritos } = await this.contagem();
-    if (favoritos >= LIMITE_FAVORITOS) return false;
+    const todos = await bd.todos();
+    const rec = todos.find((r) => r.id === id);
+    if (!rec) return 'repetido';
+    if (rec.favorito) return 'ok';
+    const digital = digitalDe(rec);
+    if (todos.some((r) => r.favorito && r.id !== id && digitalDe(r) === digital)) return 'repetido';
+    if (todos.filter((r) => r.favorito && ativo(r)).length >= LIMITE_FAVORITOS) return 'cheio';
     await bd.atualizar(id, { favorito: true, favoritadoEm: Date.now() });
     navigator.storage?.persist?.(); // pede ao navegador para não apagar os dados
-    return true;
+    return 'ok';
   }
 
   async desfavoritar(id) {
@@ -168,10 +190,14 @@ export class Acervo {
     await bd.atualizar(id, { estado, pct, retrato, pintadoEm: Date.now() });
   }
 
-  // Imagem do computador do usuário: entra no acervo.
+  // Imagem do computador do usuário: entra no acervo. Se a mesma imagem já
+  // estiver lá, abre a existente em vez de criar uma cópia.
   async adicionarArquivo(blob, titulo, modo) {
+    const hash = await resumo(blob);
+    const existente = (await bd.todos()).find((r) => r.hash === hash);
+    if (existente) return existente;
     const rec = {
-      id: `arq:${Date.now()}`, origem: 'arquivo', modo, titulo, imagem: blob, cores: 16,
+      id: `arq:${Date.now()}`, origem: 'arquivo', modo, titulo, imagem: blob, hash, cores: 16,
       status: 'pronto', favorito: false, pct: 0, criado: Date.now(),
     };
     if (modo === 'numeros') rec.contorno = await gerarContorno(blob, 16).catch(() => null);

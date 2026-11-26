@@ -24,12 +24,17 @@ preto e branco vira pintura livre.
 
 - **Para pintar**: grade com todos os seus desenhos. "✨ Mais 10 desenhos" acrescenta 10
   (primeiro os do catálogo do app, depois criados por IA), sem tirar os que já estão na tela.
-- Limite de **100 desenhos sem pintar**. Ao chegar em 100, não gera mais até você pintar alguns.
-- **⭐ Favoritos**: até **30** (pintados ou não). Com 30, para guardar outro é preciso liberar
-  um espaço; nessa hora dá para baixar o desenho antes de removê-lo.
+- Os desenhos da IA são criados em segundo plano e só aparecem quando ficam prontos.
+  O botão só fica disponível quando dá para gerar: com o lote anterior terminado, abaixo de
+  100 desenhos sem pintar e com internet (ou ainda restando desenhos do catálogo).
+- Limite de **100 desenhos sem pintar**.
+- **⭐ Favoritos**: até **30** (pintados ou não). Cada desenho entra uma vez só — cópias do
+  mesmo desenho (mesmo arquivo ou mesma imagem, comparada pelo SHA-256) são recusadas, e abrir
+  a mesma imagem do computador de novo reaproveita a existente. Com 30, para guardar outro é
+  preciso liberar um espaço; nessa hora dá para baixar o desenho antes de removê-lo.
 - Desenhos já pintados que não estão nos favoritos saem da lista quando você pede mais desenhos.
-- IA: [Pollinations.ai](https://pollinations.ai) (gratuito, sem chave). O plano gratuito faz
-  1 imagem a cada ~45 s, então os novos desenhos entram numa fila e vão aparecendo.
+- IA: [Pollinations.ai](https://pollinations.ai) (gratuito, sem chave; 1 imagem a cada ~45 s,
+  então um lote de 10 leva uns 7 minutos). Falhas passageiras são tentadas de novo.
   Para trocar de serviço, edite `js/ia.js`.
 
 ## App instalável e offline (PWA)

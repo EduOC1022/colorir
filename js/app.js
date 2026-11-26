@@ -99,25 +99,25 @@ function trocarAba(a) {
 }
 
 async function montarGaleria() {
-  const [recs, conta] = await Promise.all([
+  const [recs, conta, pode] = await Promise.all([
     aba === 'pintar' ? acervo.lista() : acervo.favoritos(),
     acervo.contagem(),
+    acervo.podeGerar(),
   ]);
   $('conta-favoritos').textContent = `${conta.favoritos}/${LIMITE_FAVORITOS}`;
   $('barra-lote').hidden = aba !== 'pintar';
-  const cheio = conta.guardados >= LIMITE_GUARDADOS;
-  $('outros').disabled = cheio || gerandoLote;
-  $('conta-guardados').textContent = cheio
-    ? `Limite de ${LIMITE_GUARDADOS} desenhos sem pintar. Pinte alguns para liberar espaço.`
-    : `${conta.guardados}/${LIMITE_GUARDADOS} desenhos sem pintar`;
+  // o botão só fica disponível quando dá para gerar de verdade
+  $('outros').disabled = !pode;
+  $('conta-guardados').textContent = `${conta.prontos}/${LIMITE_GUARDADOS} desenhos sem pintar`;
 
-  const cartoes = recs.map(cartao);
+  // desenhos ainda sendo criados não aparecem: entram na grade quando ficam prontos
+  const cartoes = recs.filter((r) => r.status === 'pronto').map(cartao);
   if (!cartoes.length) {
     const v = document.createElement('p');
     v.className = 'vazio';
     v.textContent = aba === 'favoritos'
       ? 'Nenhum favorito ainda. Toque na ☆ de um desenho para guardá-lo aqui.'
-      : 'Nenhum desenho por aqui. Toque em “Mais 10 desenhos”.';
+      : 'Nenhum desenho por aqui ainda.';
     cartoes.push(v);
   }
   $('galeria').replaceChildren(...cartoes);
@@ -131,25 +131,6 @@ function cartao(rec) {
   const src = miniaturaDe(rec);
   if (src) a.querySelector('img').src = src;
   a.querySelector('.nome').textContent = rec.titulo;
-
-  if (rec.status === 'gerando' || rec.status === 'erro') {
-    a.classList.add('gerando');
-    const e = document.createElement('div');
-    e.className = 'estado';
-    const pos = acervo.posicaoNaFila(rec.id);
-    e.innerHTML = rec.status === 'erro'
-      ? '<div>Não deu certo.<br>Toque para tentar de novo</div>'
-      : pos === 0
-        ? '<div><div class="giro"></div>Criando desenho…</div>'
-        : `<div>Na fila${pos > 0 ? ` (${pos}º)` : ''}<br><small>a IA gratuita faz 1 a cada ~45 s</small></div>`;
-    a.append(e);
-    a.onclick = (ev) => {
-      ev.preventDefault();
-      if (rec.status === 'erro') acervo.tentarDeNovo(rec.id).then(montarGaleria);
-    };
-    return a;
-  }
-
   if (rec.pct > 0) {
     const selo = document.createElement('span');
     selo.className = 'selo';
@@ -171,21 +152,14 @@ function cartao(rec) {
   return a;
 }
 
-let gerandoLote = false;
 $('outros').onclick = async () => {
-  gerandoLote = true;
   $('outros').disabled = true;
-  try {
-    const { novos, semInternet } = await acervo.outros();
-    if (semInternet && !novos) aviso('Sem internet: não dá para criar desenhos novos agora.');
-    else if (!novos) aviso(`Você já tem ${LIMITE_GUARDADOS} desenhos sem pintar.`);
-  } finally {
-    gerandoLote = false;
-  }
+  await acervo.outros();
   await montarGaleria();
-  // leva até os novos, no fim da grade
-  $('galeria').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 };
+// sem internet / internet de volta: atualiza se o botão pode ser usado
+window.addEventListener('online', () => !$('tela-galeria').hidden && montarGaleria());
+window.addEventListener('offline', () => !$('tela-galeria').hidden && montarGaleria());
 
 // Imagem do computador: colorida → por números; preto e branco → pintura livre.
 $('arquivo').addEventListener('change', async (e) => {
@@ -223,7 +197,11 @@ async function alternarFavorito(id) {
   const rec = await acervo.obter(id);
   if (!rec) return;
   if (rec.favorito) await acervo.desfavoritar(id);
-  else if (!(await acervo.favoritar(id))) await dialogoFavoritosCheios(id);
+  else {
+    const r = await acervo.favoritar(id);
+    if (r === 'cheio') await dialogoFavoritosCheios(id);
+    else if (r === 'repetido') aviso('Esse desenho já está nos seus favoritos.');
+  }
   if (atual?.id === id) atualizarEstrela();
 }
 
