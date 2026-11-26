@@ -1,0 +1,15 @@
+[
+  { "id": "arco-iris", "titulo": "Arco-íris", "categoria": "Fácil", "fonte": "https://commons.wikimedia.org/wiki/File:Cute_Rainbow_and_Smiling_Cloud_Coloring_Page.svg", "licenca": "CC0" },
+  { "id": "arvore-feliz", "titulo": "Árvore feliz", "categoria": "Fácil", "fonte": "https://commons.wikimedia.org/wiki/File:Happy_tree,_happy_sun,_and_meh_cloud_coloring_page.svg", "licenca": "CC0" },
+  { "id": "arvore-de-natal", "titulo": "Árvore de Natal", "categoria": "Fácil", "fonte": "https://commons.wikimedia.org/wiki/File:Color_this_christmas_tree.svg", "licenca": "CC0" },
+  { "id": "casinha-da-bruxa", "titulo": "Casinha da bruxa", "categoria": "Fácil", "fonte": "https://commons.wikimedia.org/wiki/File:Witch%27s_cottage_in_black_and_white.svg", "licenca": "CC0" },
+  { "id": "abelha", "titulo": "Abelha", "categoria": "Animais", "fonte": "https://commons.wikimedia.org/wiki/File:Honey_Bee_Line_Drawing.jpg", "licenca": "CC0" },
+  { "id": "cervo", "titulo": "Cervo na floresta", "categoria": "Animais", "fonte": "https://commons.wikimedia.org/wiki/File:Deer_for_coloring.jpg", "licenca": "Domínio público" },
+  { "id": "urso-na-arvore", "titulo": "Urso na árvore", "categoria": "Animais", "fonte": "https://commons.wikimedia.org/wiki/File:Brown-bear-coloring-page.png", "licenca": "CC0" },
+  { "id": "urso-pardo", "titulo": "Urso pré-histórico", "categoria": "Animais", "fonte": "https://commons.wikimedia.org/wiki/File:Arctodus_simus_National_Parks_Coloring_Book.png", "licenca": "Domínio público (National Park Service)" },
+  { "id": "cavalo", "titulo": "Cavalo", "categoria": "Animais", "fonte": "https://commons.wikimedia.org/wiki/File:08_Cavallo,_Coloring_Book_BCT,_2017.jpg", "licenca": "Domínio público" },
+  { "id": "abobora", "titulo": "Abóbora", "categoria": "Natureza", "fonte": "https://commons.wikimedia.org/wiki/File:04_Zucca,_Coloring_Book_BCT,_2017.jpg", "licenca": "Domínio público" },
+  { "id": "mandala-triangulos", "titulo": "Mandala de triângulos", "categoria": "Mandalas", "fonte": "https://commons.wikimedia.org/wiki/File:Geometric_triangles_mandala.jpg", "licenca": "CC0" },
+  { "id": "mandala-ajna", "titulo": "Mandala Ajna", "categoria": "Mandalas", "fonte": "https://commons.wikimedia.org/wiki/File:Ajna-mandala-coloring-page.jpg", "licenca": "CC0" },
+  { "id": "mandala-chakras", "titulo": "Mandala dos chakras", "categoria": "Mandalas", "fonte": "https://commons.wikimedia.org/wiki/File:Human_chakras_mandala.jpg", "licenca": "CC0" }
+]
