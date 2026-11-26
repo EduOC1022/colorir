@@ -11,8 +11,8 @@
 import { bd } from './bd.js';
 import { baixarPintura, gerarMandala, gerarContorno } from './fontes.js';
 
-export const LOTE = 10;
-export const PINTURAS_POR_LOTE = 6; // o resto do lote são mandalas
+export const LOTE = 5;
+export const PINTURAS_POR_LOTE = 3; // o resto do lote (2) são mandalas
 export const LIMITE_GUARDADOS = 100;
 export const LIMITE_FAVORITOS = 30;
 const ESQUEMA = 2; // ao mudar, o acervo antigo do usuário é apagado (reset)

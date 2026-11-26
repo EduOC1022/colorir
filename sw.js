@@ -4,7 +4,7 @@
 // - os desenhos (pinturas baixadas e mandalas) ficam no IndexedDB, não passam por aqui.
 //
 // Ao publicar uma mudança no app, aumente VERSAO para os usuários receberem a atualização.
-const VERSAO = 'v4';
+const VERSAO = 'v5';
 const CASCA = `colorir-casca-${VERSAO}`;
 
 const ARQUIVOS = [

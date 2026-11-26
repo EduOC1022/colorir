@@ -23,15 +23,15 @@ toque nas áreas com aquele número. Ao acertar, a área revela as cores origina
 - **Mandalas coloridas** criadas pelo próprio app (`js/fontes.js`): simetria radial,
   paletas harmônicas, sem limite e funcionam offline.
 
-"✨ Mais desenhos" acrescenta um lote de **10** (6 pinturas + 4 mandalas, intercaladas;
-quando as pinturas acabam, só mandalas). Cada desenho aparece assim que fica pronto e o lote
-inteiro leva cerca de **7–15 s**. Enquanto carrega, a grade mostra cartões "esqueleto" animados
-no lugar dos desenhos e o botão mostra o progresso ("Carregando desenhos… 4/10"); ele volta
+"✨ Mais desenhos" acrescenta um lote de **5** (3 pinturas + 2 mandalas, intercaladas;
+as 47 pinturas duram 16 lotes, depois vêm só mandalas). Cada desenho aparece assim que fica
+pronto e o lote inteiro leva cerca de **5–12 s** (depende da internet). Enquanto carrega, a grade mostra cartões "esqueleto" animados
+no lugar dos desenhos e o botão mostra o progresso ("Carregando desenhos… 2/5"); ele volta
 a ficar disponível quando o lote termina.
 
 ### Por que não IA?
 Testamos o Pollinations.ai (gratuito, sem chave): o limite é **1 imagem a cada ~45 s**,
-ou seja, ~7,5 min para 10 desenhos. As pinturas do Commons levam 0,5–2 s cada e as mandalas
+ou seja, ~3,7 min para um lote de 5. As pinturas do Commons levam 0,5–2 s cada e as mandalas
 ~0,15 s. Com uma chave paga de IA dá para voltar a gerar por IA (fonte separada em `js/fontes.js`).
 
 ## Seus desenhos e favoritos
