@@ -196,3 +196,24 @@ button { font: inherit; color: inherit; }
 @media (display-mode: standalone) { .rodape { padding-bottom: calc(16px + env(safe-area-inset-bottom)); } }
 
 .cartao .autor { display: block; font-size: .75rem; color: var(--suave); margin-top: 2px; }
+
+/* Carregando: cartões esqueleto e botão com indicador */
+.cartao.esqueleto { cursor: default; pointer-events: none; }
+.esqueleto .esq-img, .esqueleto .esq-linha {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f1e8de 25%, #fbf6f0 50%, #f1e8de 75%) 0 0 / 200% 100%;
+  animation: brilho 1.2s linear infinite;
+}
+.esqueleto .esq-img { aspect-ratio: 1; }
+.esqueleto .esq-linha { height: 12px; margin-top: 8px; width: 80%; }
+.esqueleto .esq-linha.curta { width: 50%; }
+@keyframes brilho { to { background-position: -200% 0; } }
+#outros.ocupado { display: inline-flex; align-items: center; gap: 8px; opacity: .85; }
+#outros.ocupado::before {
+  content: ""; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid #fff6; border-top-color: #fff; animation: girar .8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto .esq-img, .esqueleto .esq-linha, #outros.ocupado::before { animation: none; }
+}

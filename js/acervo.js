@@ -34,6 +34,15 @@ export class Acervo {
     this.pinturas = pinturas; // lista de pinturas famosas, em ordem
     this.aoMudar = () => {}; // (id) => void — um desenho mudou (ex.: ficou pronto)
     this.fila = [];
+    this.lote = { total: 0, feitos: 0 }; // progresso do lote em preparo
+  }
+
+  // { feitos, total } do lote sendo preparado; total 0 = nada carregando.
+  progressoLote() {
+    const pendentes = this.fila.length + (this.atual ? 1 : 0);
+    if (!pendentes) return { feitos: 0, total: 0 };
+    const total = Math.max(this.lote.total, pendentes + this.lote.feitos);
+    return { feitos: total - pendentes, total };
   }
 
   async iniciar() {
@@ -116,6 +125,7 @@ export class Acervo {
     await bd.definirMeta('pinturasUsadas', [...usadas]);
     await bd.definirMeta('semente', semente);
     for (const rec of novos) if (!(await bd.obter(rec.id))) await bd.salvar(rec);
+    this.lote = { total: novos.length, feitos: 0 };
     novos.forEach((r) => this._enfileirar(r.id));
     return { novos: novos.length };
   }
@@ -134,10 +144,12 @@ export class Acervo {
         this.atual = this.fila.shift();
         await this._preparar(this.atual);
         this.atual = null;
+        this.lote.feitos++;
         this.aoMudar();
       }
     } finally {
       this.processando = false;
+      this.lote = { total: 0, feitos: 0 };
     }
   }
 

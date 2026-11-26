@@ -89,12 +89,21 @@ async function montarGaleria() {
   ]);
   $('conta-favoritos').textContent = `${conta.favoritos}/${LIMITE_FAVORITOS}`;
   $('barra-lote').hidden = aba !== 'pintar';
-  // o botão só fica disponível quando dá para gerar de verdade
-  $('outros').disabled = !pode;
   $('conta-guardados').textContent = `${conta.prontos}/${LIMITE_GUARDADOS} desenhos sem pintar`;
 
-  // desenhos ainda sendo criados não aparecem: entram na grade quando ficam prontos
-  const cartoes = recs.filter((r) => r.status === 'pronto').map(cartao);
+  // botão: disponível só quando dá para gerar; enquanto carrega, mostra o progresso
+  const { feitos, total } = acervo.progressoLote();
+  const carregando = total > 0;
+  const bt = $('outros');
+  bt.disabled = !pode;
+  bt.classList.toggle('ocupado', carregando);
+  bt.textContent = carregando ? `Carregando desenhos… ${feitos}/${total}` : '✨ Mais desenhos';
+  $('galeria').setAttribute('aria-busy', String(carregando));
+
+  // prontos viram cartões; os que estão carregando aparecem como "esqueleto" animado
+  const cartoes = recs
+    .filter((r) => r.status === 'pronto' || (r.status === 'gerando' && aba === 'pintar'))
+    .map((r) => (r.status === 'pronto' ? cartao(r) : esqueleto()));
   if (!cartoes.length) {
     const v = document.createElement('p');
     v.className = 'vazio';
@@ -104,6 +113,14 @@ async function montarGaleria() {
     cartoes.push(v);
   }
   $('galeria').replaceChildren(...cartoes);
+}
+
+function esqueleto() {
+  const d = document.createElement('div');
+  d.className = 'cartao esqueleto';
+  d.setAttribute('aria-hidden', 'true');
+  d.innerHTML = '<div class="esq-img"></div><div class="esq-linha"></div><div class="esq-linha curta"></div>';
+  return d;
 }
 
 function cartao(rec) {

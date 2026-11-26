@@ -25,7 +25,9 @@ toque nas áreas com aquele número. Ao acertar, a área revela as cores origina
 
 "✨ Mais desenhos" acrescenta um lote de **10** (6 pinturas + 4 mandalas, intercaladas;
 quando as pinturas acabam, só mandalas). Cada desenho aparece assim que fica pronto e o lote
-inteiro leva cerca de **7–15 s**. O botão só fica disponível quando o lote anterior terminou.
+inteiro leva cerca de **7–15 s**. Enquanto carrega, a grade mostra cartões "esqueleto" animados
+no lugar dos desenhos e o botão mostra o progresso ("Carregando desenhos… 4/10"); ele volta
+a ficar disponível quando o lote termina.
 
 ### Por que não IA?
 Testamos o Pollinations.ai (gratuito, sem chave): o limite é **1 imagem a cada ~45 s**,
