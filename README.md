@@ -20,7 +20,28 @@ Controles: arraste para mover; roda do mouse ou pinça (2 dedos) para zoom;
 "Abrir imagem…" aceita qualquer imagem do computador: colorida vira colorir por números,
 preto e branco vira pintura livre.
 
+## Seus desenhos, favoritos e IA
+
+- **Para pintar**: grade com todos os seus desenhos. "✨ Mais 10 desenhos" acrescenta 10
+  (primeiro os do catálogo do app, depois criados por IA), sem tirar os que já estão na tela.
+- Limite de **100 desenhos sem pintar**. Ao chegar em 100, não gera mais até você pintar alguns.
+- **⭐ Favoritos**: até **30** (pintados ou não). Com 30, para guardar outro é preciso liberar
+  um espaço; nessa hora dá para baixar o desenho antes de removê-lo.
+- Desenhos já pintados que não estão nos favoritos saem da lista quando você pede mais desenhos.
+- IA: [Pollinations.ai](https://pollinations.ai) (gratuito, sem chave). O plano gratuito faz
+  1 imagem a cada ~45 s, então os novos desenhos entram numa fila e vão aparecendo.
+  Para trocar de serviço, edite `js/ia.js`.
+
+## App instalável e offline (PWA)
+
+- Sem servidor nem banco externo: tudo fica no navegador (IndexedDB), incluindo as imagens geradas.
+- `manifest.webmanifest` + ícones: dá para instalar (botão "Instalar app" ou menu do navegador).
+- `sw.js` (service worker): o app abre offline; imagens do catálogo ficam em cache depois de vistas.
+- **Ao publicar uma mudança, aumente `VERSAO` em `sw.js`**: o app mostra "Nova versão disponível".
+
 ## Como funciona por dentro
+
+- `js/acervo.js`: regras de lotes, limites, favoritos e fila da IA; `js/bd.js`: IndexedDB.
 
 - `js/numeros-gerador.js` (roda num Web Worker, ~0,3–0,5 s por imagem): k-means reduz a imagem a K cores,
   um filtro de maioria limpa pixels soltos, áreas pequenas ou finas demais são fundidas com a

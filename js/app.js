@@ -1,5 +1,6 @@
 import { Pintura } from './pintura.js';
 import { Numeros } from './numeros.js';
+import { Acervo, LIMITE_GUARDADOS, LIMITE_FAVORITOS } from './acervo.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,14 +17,12 @@ const PALETA_LIVRE = [
   '#5c3a1e', '#8b5a2b', '#d2a679', '#f1dcc4',
 ];
 const BORRACHA = '#ffffff';
-const LIVRE = 'Pintura livre';
 
 const hexParaInt = (h) => parseInt(h.slice(1), 16);
-const chave = (d) => (d.modo === 'numeros' ? `colorir:n:${d.id}` : `colorir:${d.id}`);
-const chaveMini = (d) => `${chave(d)}:mini`;
 
-let itens = [];
-let atual = null; // item aberto: { id, modo, titulo, src, salvar, cores? }
+let acervo;
+let atual = null; // registro do desenho aberto
+let aba = 'pintar';
 let corLivre = '#f97316';
 let recentes = JSON.parse(localStorage.getItem('colorir:recentes') || '[]');
 
@@ -33,88 +32,182 @@ const livre = new Pintura(canvas);
 const numeros = new Numeros(canvas, sob);
 const motor = () => (atual?.modo === 'numeros' ? numeros : livre);
 
-/* ---------------- Galeria ---------------- */
+/* ---------------- Imagens dos registros ---------------- */
+
+// URLs de Blobs guardados no banco (criadas uma vez por sessão)
+const urls = new Map();
+function urlDe(rec, campo) {
+  const blob = rec[campo];
+  if (!blob) return '';
+  const k = `${rec.id}:${campo}`;
+  if (!urls.has(k)) urls.set(k, URL.createObjectURL(blob));
+  return urls.get(k);
+}
+const fonteDe = (rec) => rec.src || urlDe(rec, 'imagem');
+
+// Galeria: por números aparece sem cor até começar; depois como você deixou; colorida quando pronta.
+function miniaturaDe(rec) {
+  if (rec.status !== 'pronto') return '';
+  if (rec.pct >= 100) return rec.modo === 'numeros' ? rec.mini || urlDe(rec, 'imagem') : rec.retrato || rec.mini || urlDe(rec, 'imagem');
+  if (rec.retrato) return rec.retrato;
+  if (rec.modo === 'numeros') return rec.contornoUrl || urlDe(rec, 'contorno');
+  return rec.mini || urlDe(rec, 'imagem');
+}
+
+/* ---------------- Início ---------------- */
 
 async function iniciar() {
   const [n, d] = await Promise.all([
     fetch('numeros/numeros.json').then((r) => r.json()),
     fetch('desenhos/desenhos.json').then((r) => r.json()),
   ]);
-  itens = [
-    ...n.map((x) => ({ ...x, modo: 'numeros', src: `numeros/${x.arquivo}`, mini: `numeros/${x.mini}`, contorno: `numeros/contorno/${x.id}.png`, rota: `n/${x.id}` })),
-    ...d.map((x) => ({ ...x, modo: 'livre', categoria: LIVRE, src: `desenhos/${x.id}.png`, mini: `desenhos/mini/${x.id}.png`, rota: `d/${x.id}` })),
-  ];
-  montarFiltros();
-  montarGaleria('Todos');
+  // catálogo intercalado: fáceis e arte por números, com desenhos livres no meio
+  const porNumeros = n.map((x) => ({
+    id: `cat:n:${x.id}`, modo: 'numeros', titulo: x.titulo, cores: x.cores, minimo: x.minimo,
+    src: `numeros/${x.arquivo}`, mini: `numeros/${x.mini}`, contornoUrl: `numeros/contorno/${x.id}.png`,
+  }));
+  const livres = d.map((x) => ({
+    id: `cat:d:${x.id}`, modo: 'livre', titulo: x.titulo, src: `desenhos/${x.id}.png`, mini: `desenhos/mini/${x.id}.png`,
+  }));
+  const catalogo = [];
+  while (porNumeros.length || livres.length) {
+    catalogo.push(...porNumeros.splice(0, 3));
+    if (livres.length) catalogo.push(livres.shift());
+  }
+
+  acervo = new Acervo(catalogo);
+  let timer = 0;
+  acervo.aoMudar = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (!$('tela-galeria').hidden) montarGaleria(); }, 150);
+  };
+  await acervo.iniciar();
   window.addEventListener('hashchange', rotear);
   rotear();
 }
 
-function filtroAtivo() {
-  return $('filtros').querySelector('[aria-pressed="true"]')?.textContent || 'Todos';
+/* ---------------- Galeria ---------------- */
+
+$('aba-pintar').onclick = () => trocarAba('pintar');
+$('aba-favoritos').onclick = () => trocarAba('favoritos');
+
+function trocarAba(a) {
+  aba = a;
+  $('aba-pintar').setAttribute('aria-pressed', a === 'pintar');
+  $('aba-favoritos').setAttribute('aria-pressed', a === 'favoritos');
+  montarGaleria();
 }
 
-function montarFiltros() {
-  const cats = ['Todos', ...new Set(itens.map((d) => d.categoria))];
-  const nav = $('filtros');
-  nav.replaceChildren(
-    ...cats.map((c) => {
-      const b = document.createElement('button');
-      b.textContent = c;
-      b.setAttribute('aria-pressed', c === 'Todos');
-      b.onclick = () => {
-        nav.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
-        montarGaleria(c);
-      };
-      return b;
-    }),
-  );
+async function montarGaleria() {
+  const [recs, conta] = await Promise.all([
+    aba === 'pintar' ? acervo.lista() : acervo.favoritos(),
+    acervo.contagem(),
+  ]);
+  $('conta-favoritos').textContent = `${conta.favoritos}/${LIMITE_FAVORITOS}`;
+  $('barra-lote').hidden = aba !== 'pintar';
+  const cheio = conta.guardados >= LIMITE_GUARDADOS;
+  $('outros').disabled = cheio || gerandoLote;
+  $('conta-guardados').textContent = cheio
+    ? `Limite de ${LIMITE_GUARDADOS} desenhos sem pintar. Pinte alguns para liberar espaço.`
+    : `${conta.guardados}/${LIMITE_GUARDADOS} desenhos sem pintar`;
+
+  const cartoes = recs.map(cartao);
+  if (!cartoes.length) {
+    const v = document.createElement('p');
+    v.className = 'vazio';
+    v.textContent = aba === 'favoritos'
+      ? 'Nenhum favorito ainda. Toque na ☆ de um desenho para guardá-lo aqui.'
+      : 'Nenhum desenho por aqui. Toque em “Mais 10 desenhos”.';
+    cartoes.push(v);
+  }
+  $('galeria').replaceChildren(...cartoes);
 }
 
-function montarGaleria(categoria) {
-  const lista = categoria === 'Todos' ? itens : itens.filter((d) => d.categoria === categoria);
-  $('galeria').replaceChildren(
-    ...lista.map((d) => {
-      const a = document.createElement('a');
-      a.className = 'cartao';
-      a.href = `#/${d.rota}`;
-      a.innerHTML = `<img loading="lazy" decoding="async" alt=""><span></span>`;
-      a.querySelector('span').textContent = d.titulo;
-      const salvo = localStorage.getItem(chave(d));
-      const pct = salvo && d.modo === 'numeros' ? JSON.parse(salvo).pct : null;
-      // Por números: sem cor até começar; depois o retrato do progresso; colorida quando pronta.
-      const foto = salvo && localStorage.getItem(chaveMini(d));
-      a.querySelector('img').src =
-        pct >= 100 ? d.mini : foto || (d.modo === 'numeros' ? d.contorno : d.mini);
-      if (salvo) {
-        const selo = document.createElement('span');
-        selo.className = 'selo';
-        selo.textContent = pct >= 100 ? '✓ pronto' : pct != null ? `${pct}%` : 'continuar';
-        a.append(selo);
-      }
-      return a;
-    }),
-  );
+function cartao(rec) {
+  const a = document.createElement('a');
+  a.className = 'cartao';
+  a.href = `#/p/${encodeURIComponent(rec.id)}`;
+  a.innerHTML = '<img alt="" loading="lazy" decoding="async"><span class="nome"></span>';
+  const src = miniaturaDe(rec);
+  if (src) a.querySelector('img').src = src;
+  a.querySelector('.nome').textContent = rec.titulo;
+
+  if (rec.status === 'gerando' || rec.status === 'erro') {
+    a.classList.add('gerando');
+    const e = document.createElement('div');
+    e.className = 'estado';
+    const pos = acervo.posicaoNaFila(rec.id);
+    e.innerHTML = rec.status === 'erro'
+      ? '<div>Não deu certo.<br>Toque para tentar de novo</div>'
+      : pos === 0
+        ? '<div><div class="giro"></div>Criando desenho…</div>'
+        : `<div>Na fila${pos > 0 ? ` (${pos}º)` : ''}<br><small>a IA gratuita faz 1 a cada ~45 s</small></div>`;
+    a.append(e);
+    a.onclick = (ev) => {
+      ev.preventDefault();
+      if (rec.status === 'erro') acervo.tentarDeNovo(rec.id).then(montarGaleria);
+    };
+    return a;
+  }
+
+  if (rec.pct > 0) {
+    const selo = document.createElement('span');
+    selo.className = 'selo';
+    selo.textContent = rec.pct >= 100 ? '✓ pronto' : rec.modo === 'numeros' ? `${rec.pct}%` : 'continuar';
+    a.append(selo);
+  }
+  const est = document.createElement('button');
+  est.className = 'estrela';
+  est.setAttribute('aria-pressed', String(!!rec.favorito));
+  est.setAttribute('aria-label', rec.favorito ? 'Remover dos favoritos' : 'Favoritar');
+  est.textContent = rec.favorito ? '★' : '☆';
+  est.onclick = async (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    await alternarFavorito(rec.id);
+    montarGaleria();
+  };
+  a.append(est);
+  return a;
 }
+
+let gerandoLote = false;
+$('outros').onclick = async () => {
+  gerandoLote = true;
+  $('outros').disabled = true;
+  try {
+    const { novos, semInternet } = await acervo.outros();
+    if (semInternet && !novos) aviso('Sem internet: não dá para criar desenhos novos agora.');
+    else if (!novos) aviso(`Você já tem ${LIMITE_GUARDADOS} desenhos sem pintar.`);
+  } finally {
+    gerandoLote = false;
+  }
+  await montarGaleria();
+  // leva até os novos, no fim da grade
+  $('galeria').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+};
 
 // Imagem do computador: colorida → por números; preto e branco → pintura livre.
 $('arquivo').addEventListener('change', async (e) => {
   const f = e.target.files[0];
   e.target.value = '';
   if (!f) return;
-  const src = URL.createObjectURL(f);
-  const modo = (await ehColorida(src)) ? 'numeros' : 'livre';
-  history.pushState(null, '', '#/arquivo');
-  abrir({ id: null, modo, titulo: f.name.replace(/\.[^.]+$/, ''), src, salvar: false });
+  try {
+    const modo = (await ehColorida(f)) ? 'numeros' : 'livre';
+    const rec = await acervo.adicionarArquivo(f, f.name.replace(/\.[^.]+$/, ''), modo);
+    location.hash = `#/p/${encodeURIComponent(rec.id)}`;
+  } catch (err) {
+    console.error(err);
+    aviso('Não consegui abrir essa imagem.');
+  }
 });
 
-async function ehColorida(src) {
-  const img = new Image();
-  img.src = src;
-  await img.decode();
+async function ehColorida(blob) {
+  const bmp = await createImageBitmap(blob);
   const c = new OffscreenCanvas(64, 64);
   const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0, 64, 64);
+  ctx.drawImage(bmp, 0, 0, 64, 64);
+  bmp.close();
   const d = ctx.getImageData(0, 0, 64, 64).data;
   let sat = 0;
   for (let i = 0; i < d.length; i += 4) {
@@ -124,15 +217,66 @@ async function ehColorida(src) {
   return sat / 4096 > 0.12;
 }
 
+/* ---------------- Favoritos ---------------- */
+
+async function alternarFavorito(id) {
+  const rec = await acervo.obter(id);
+  if (!rec) return;
+  if (rec.favorito) await acervo.desfavoritar(id);
+  else if (!(await acervo.favoritar(id))) await dialogoFavoritosCheios(id);
+  if (atual?.id === id) atualizarEstrela();
+}
+
+async function atualizarEstrela() {
+  const rec = atual && (await acervo.obter(atual.id));
+  const fav = !!rec?.favorito;
+  $('favorito').setAttribute('aria-pressed', String(fav));
+  $('favorito').textContent = fav ? '★' : '☆';
+  $('fim-favoritar').hidden = fav;
+}
+
+$('favorito').onclick = () => atual && alternarFavorito(atual.id);
+$('fim-favoritar').onclick = async () => {
+  await alternarFavorito(atual.id);
+  const rec = await acervo.obter(atual.id);
+  if (rec?.favorito) aviso('Guardado nos favoritos ⭐');
+};
+
+// 30 favoritos: o usuário escolhe qual liberar (podendo baixar antes).
+async function dialogoFavoritosCheios(pendente) {
+  const dlg = $('dlg-favoritos');
+  const favs = await acervo.favoritos();
+  $('lista-favoritos').replaceChildren(
+    ...favs.map((f) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<img alt=""><span></span><button class="botao secundario">⬇ Baixar</button><button class="botao">Remover</button>';
+      const src = miniaturaDe(f);
+      if (src) li.querySelector('img').src = src;
+      li.querySelector('span').textContent = `${f.titulo}${f.pct >= 100 ? ' ✓' : f.pct ? ` · ${f.pct}%` : ''}`;
+      const [baixar, remover] = li.querySelectorAll('button');
+      baixar.onclick = () => baixarDesenho(f);
+      remover.onclick = async () => {
+        await acervo.desfavoritar(f.id);
+        await acervo.favoritar(pendente);
+        dlg.close();
+        aviso(`“${f.titulo}” saiu dos favoritos; o novo foi guardado ⭐`);
+        if (atual) atualizarEstrela();
+        if (!$('tela-galeria').hidden) montarGaleria();
+      };
+      return li;
+    }),
+  );
+  dlg.showModal();
+  await new Promise((ok) => dlg.addEventListener('close', ok, { once: true }));
+}
+
 /* ---------------- Navegação ---------------- */
 
-function rotear() {
-  const rota = location.hash.slice(2);
-  const item = itens.find((x) => x.rota === decodeURIComponent(rota));
-  if (item) abrir({ ...item, salvar: true });
-  else if (rota === 'arquivo' && atual && !atual.salvar) {
-    /* continua no arquivo enviado */
-  } else mostrarGaleria();
+async function rotear() {
+  const m = location.hash.match(/^#\/p\/(.+)$/);
+  const rec = m && (await acervo.obter(decodeURIComponent(m[1])));
+  if (rec && rec.status === 'pronto') abrir(rec);
+  else mostrarGaleria();
 }
 
 function mostrarGaleria() {
@@ -141,41 +285,40 @@ function mostrarGaleria() {
   $('tela-pintura').hidden = true;
   $('tela-galeria').hidden = false;
   document.title = 'Colorir';
-  montarGaleria(filtroAtivo());
+  montarGaleria();
 }
 
-async function abrir(item) {
-  if (atual && atual.src === item.src) return;
+async function abrir(rec) {
+  if (atual && atual.id === rec.id) return;
   salvarAgora();
-  atual = item;
+  atual = rec;
   const tela = $('tela-pintura');
-  tela.classList.toggle('modo-numeros', item.modo === 'numeros');
-  tela.classList.toggle('modo-livre', item.modo === 'livre');
+  tela.classList.toggle('modo-numeros', rec.modo === 'numeros');
+  tela.classList.toggle('modo-livre', rec.modo === 'livre');
   $('tela-galeria').hidden = true;
   tela.hidden = false;
   $('fim').hidden = true;
-  $('titulo').textContent = item.titulo;
-  document.title = `${item.titulo} · Colorir`;
+  $('titulo').textContent = rec.titulo;
+  document.title = `${rec.titulo} · Colorir`;
   $('carregando').hidden = false;
   $('cores').replaceChildren();
   limparSobreposicao();
+  atualizarEstrela();
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r)));
   try {
-    if (item.modo === 'numeros') await numeros.carregar(item.src, { cores: item.cores, minimo: item.minimo });
-    else await livre.carregar(item.src);
-    if (atual !== item) return; // usuário saiu durante o carregamento
-    const salvo = item.salvar && localStorage.getItem(chave(item));
-    if (salvo) motor().importarEstado(JSON.parse(salvo));
+    if (rec.modo === 'numeros') await numeros.carregar(fonteDe(rec), { cores: rec.cores, minimo: rec.minimo });
+    else await livre.carregar(fonteDe(rec));
+    if (atual !== rec) return; // saiu durante o carregamento
+    if (rec.estado) motor().importarEstado(rec.estado);
   } catch (err) {
     console.error(err);
-    alert('Não consegui abrir essa imagem.');
+    aviso('Não consegui abrir esse desenho.');
     location.hash = '';
     return;
   } finally {
-    if (item.salvar === false) URL.revokeObjectURL(item.src);
     $('carregando').hidden = true;
   }
-  if (item.modo === 'numeros') montarPaletaNumerada();
+  if (rec.modo === 'numeros') montarPaletaNumerada();
   else montarPaletaLivre();
   ajustarZoom();
   atualizarBotoes();
@@ -195,32 +338,32 @@ livre.aoMudar = numeros.aoMudar = () => {
   timerSalvar = setTimeout(salvarAgora, 400);
 };
 
-function salvarAgora() {
+function salvarAgora(pctForcado) {
   clearTimeout(timerSalvar);
-  if (!atual || !atual.salvar) return;
+  if (!atual) return;
   const m = motor();
   if (!m.rot) return;
-  const k = chave(atual);
-  let estado = null;
+  let estado, pct;
   if (atual.modo === 'numeros') {
     const p = numeros.progresso;
-    if (p > 0) estado = { ...numeros.exportarEstado(), pct: Math.floor(p * 100) };
-  } else if (livre.temPintura) estado = livre.exportarEstado();
-  try {
-    if (estado) {
-      localStorage.setItem(k, JSON.stringify(estado));
-      localStorage.setItem(chaveMini(atual), retrato());
-    } else {
-      localStorage.removeItem(k);
-      localStorage.removeItem(chaveMini(atual));
-    }
-  } catch (err) {
-    console.warn('Não foi possível salvar o progresso', err); // armazenamento cheio
+    pct = Math.floor(p * 100);
+    estado = p > 0 ? numeros.exportarEstado() : null;
+  } else {
+    estado = livre.temPintura ? livre.exportarEstado() : null;
+    pct = typeof pctForcado === 'number' ? pctForcado : atual.pct || 0;
   }
+  const retrato = estado ? fazerRetrato() : null;
+  Object.assign(atual, { estado, pct, retrato });
+  acervo.salvarProgresso(atual.id, { estado, pct, retrato }).catch((err) => {
+    console.warn('Não foi possível salvar o progresso', err);
+    aviso('Não consegui salvar: o armazenamento do navegador está cheio.');
+  });
 }
+window.addEventListener('pagehide', () => salvarAgora());
+document.addEventListener('visibilitychange', () => { if (document.hidden) salvarAgora(); });
 
-// Miniatura pequena do estado atual, para a galeria (~10 KB).
-function retrato() {
+// Miniatura pequena do estado atual, para a galeria.
+function fazerRetrato() {
   const esc = 240 / Math.max(canvas.width, canvas.height);
   const c = document.createElement('canvas');
   c.width = Math.round(canvas.width * esc);
@@ -230,7 +373,6 @@ function retrato() {
   ctx.drawImage(canvas, 0, 0, c.width, c.height);
   return c.toDataURL('image/webp', 0.75);
 }
-window.addEventListener('pagehide', salvarAgora);
 
 function atualizarBotoes() {
   if (atual?.modo === 'numeros') {
@@ -284,19 +426,17 @@ function selecionarNumero(i, forcar) {
 
 numeros.aoAcertar = (cor) => {
   atualizarCor(cor);
-  if (numeros.faltam[cor] === 0) {
-    if (numeros.completo) {
-      salvarAgora();
-      ajustarZoom();
-      setTimeout(() => ($('fim').hidden = false), 300);
-    } else {
-      // passa para a próxima cor que ainda falta
-      const n = numeros.paleta.length;
-      for (let k = 1; k <= n; k++) {
-        const j = (cor + k) % n;
-        if (numeros.faltam[j] > 0) { selecionarNumero(j); break; }
-      }
-    }
+  if (numeros.faltam[cor] !== 0) return;
+  if (numeros.completo) {
+    salvarAgora();
+    ajustarZoom();
+    setTimeout(() => ($('fim').hidden = false), 300);
+    return;
+  }
+  const n = numeros.paleta.length;
+  for (let k = 1; k <= n; k++) {
+    const j = (cor + k) % n;
+    if (numeros.faltam[j] > 0) { selecionarNumero(j); break; }
   }
 };
 
@@ -315,6 +455,10 @@ $('dica').onclick = () => {
 
 $('fim-fechar').onclick = () => ($('fim').hidden = true);
 $('fim-baixar').onclick = () => $('baixar').click();
+$('terminei').onclick = () => {
+  salvarAgora(100);
+  $('fim').hidden = false;
+};
 
 /* ---------------- Paleta: livre ---------------- */
 
@@ -367,20 +511,37 @@ $('limpar').onclick = () => {
     numeros.reiniciar();
     montarPaletaNumerada();
     agendarNumeros();
-  } else livre.limpar();
-};
-$('baixar').onclick = () => {
-  canvas.toBlob((blob) => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${(atual?.titulo || 'desenho').replace(/[^\p{L}\p{N}-]+/gu, '-')}.png`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }, 'image/png');
+  } else {
+    livre.limpar();
+    salvarAgora(0);
+  }
 };
 
+const nomeArquivo = (rec) => `${(rec?.titulo || 'desenho').replace(/[^\p{L}\p{N}-]+/gu, '-')}.png`;
+
+function salvarBlob(blob, nome) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+$('baixar').onclick = () => canvas.toBlob((b) => salvarBlob(b, nomeArquivo(atual)), 'image/png');
+
+// Baixa um desenho que não está aberto: monta o estado dele numa tela invisível.
+async function baixarDesenho(rec) {
+  if (atual?.id === rec.id) return $('baixar').click();
+  const c = document.createElement('canvas');
+  const m = rec.modo === 'numeros' ? new Numeros(c, document.createElement('canvas')) : new Pintura(c);
+  if (rec.modo === 'numeros') await m.carregar(fonteDe(rec), { cores: rec.cores, minimo: rec.minimo });
+  else await m.carregar(fonteDe(rec));
+  if (rec.estado) m.importarEstado(rec.estado);
+  c.toBlob((b) => salvarBlob(b, nomeArquivo(rec)), 'image/png');
+}
+
 document.addEventListener('keydown', (e) => {
-  if ($('tela-pintura').hidden) return;
+  if ($('tela-pintura').hidden || $('dlg-favoritos').open) return;
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (atual?.modo === 'livre' && ctrl && k === 'z' && !e.shiftKey) { e.preventDefault(); livre.desfazer(); }
   else if (atual?.modo === 'livre' && ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); livre.refazer(); }
@@ -389,6 +550,59 @@ document.addEventListener('keydown', (e) => {
   else if (k === '0') ajustarZoom();
   else if (k === 'escape') $('voltar').click();
 });
+
+/* ---------------- Avisos, instalação e modo offline (PWA) ---------------- */
+
+let timerAviso = 0;
+function aviso(texto, acao) {
+  const el = $('aviso');
+  el.replaceChildren(texto);
+  if (acao) {
+    const b = document.createElement('button');
+    b.textContent = acao.rotulo;
+    b.onclick = () => { el.hidden = true; acao.fn(); };
+    el.append(b);
+  }
+  el.hidden = false;
+  clearTimeout(timerAviso);
+  if (!acao) timerAviso = setTimeout(() => (el.hidden = true), 4000);
+}
+
+let pedidoInstalar = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  pedidoInstalar = e;
+  $('instalar').hidden = false;
+});
+$('instalar').onclick = async () => {
+  if (!pedidoInstalar) return;
+  pedidoInstalar.prompt();
+  await pedidoInstalar.userChoice;
+  pedidoInstalar = null;
+  $('instalar').hidden = true;
+};
+window.addEventListener('appinstalled', () => ($('instalar').hidden = true));
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const oferecer = (sw) =>
+      aviso('Nova versão disponível.', { rotulo: 'Atualizar', fn: () => sw.postMessage('atualizar') });
+    if (reg.waiting && navigator.serviceWorker.controller) oferecer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw?.addEventListener('statechange', () => {
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) oferecer(sw);
+      });
+    });
+  });
+  let recarregando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (recarregando) return;
+    recarregando = true;
+    salvarAgora();
+    location.reload();
+  });
+}
 
 /* ---------------- Zoom e arrastar ---------------- */
 // O canvas fica no tamanho real da imagem; a visualização usa transform CSS.
@@ -530,6 +744,6 @@ visor.addEventListener('pointercancel', soltar);
 visor.addEventListener('contextmenu', (e) => e.preventDefault());
 
 // ?debug expõe os motores no console, para testes
-if (location.search.includes('debug')) Object.assign(globalThis, { numeros, livre, vista });
+if (location.search.includes('debug')) Object.assign(globalThis, { numeros, livre, vista, obterAcervo: () => acervo });
 
 iniciar();

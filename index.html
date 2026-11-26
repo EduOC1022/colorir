@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fff7ed">
+  <meta name="description" content="Colorir por números e pintura livre, sem anúncios. Funciona offline.">
   <title>Colorir</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
   <link rel="stylesheet" href="css/estilo.css">
   <script type="module" src="js/app.js"></script>
 </head>
@@ -14,16 +17,27 @@
   <section id="tela-galeria" class="tela">
     <header class="topo">
       <h1>🎨 Colorir</h1>
-      <label class="botao secundario" title="Imagem colorida vira colorir por números; desenho preto e branco vira pintura livre">
-        Abrir imagem…
-        <input id="arquivo" type="file" accept="image/*" hidden>
-      </label>
+      <div class="acoes">
+        <button id="instalar" class="botao" hidden>Instalar app</button>
+        <label class="botao secundario" title="Imagem colorida vira colorir por números; desenho preto e branco vira pintura livre">
+          Abrir imagem…
+          <input id="arquivo" type="file" accept="image/*" hidden>
+        </label>
+      </div>
     </header>
-    <nav id="filtros" class="filtros"></nav>
+    <nav class="filtros" role="tablist">
+      <button id="aba-pintar" role="tab" aria-pressed="true">Para pintar</button>
+      <button id="aba-favoritos" role="tab" aria-pressed="false">⭐ Favoritos <span id="conta-favoritos"></span></button>
+    </nav>
     <main id="galeria" class="galeria"></main>
+    <div id="barra-lote" class="barra-lote">
+      <button id="outros" class="botao">✨ Mais 10 desenhos</button>
+      <span id="conta-guardados" class="suave"></span>
+    </div>
     <footer class="rodape">
-      Imagens em domínio público / CC0 (fontes no repositório). Sem anúncios.
-      Seu progresso fica salvo só neste navegador.
+      Sem anúncios. Tudo fica salvo só neste navegador.
+      Imagens do catálogo em domínio público / CC0; novas imagens geradas por IA
+      (<a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations</a>).
     </footer>
   </section>
 
@@ -36,9 +50,11 @@
         <div id="progresso" class="progresso so-numeros"><span></span></div>
       </div>
       <div class="acoes">
+        <button id="favorito" class="icone" title="Favoritar" aria-label="Favoritar" aria-pressed="false">☆</button>
         <button id="dica" class="icone so-numeros" title="Dica: mostra uma área da cor escolhida" aria-label="Dica">💡</button>
         <button id="desfazer" class="icone so-livre" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
         <button id="refazer" class="icone so-livre" title="Refazer (Ctrl+Y)" aria-label="Refazer">↷</button>
+        <button id="terminei" class="icone so-livre" title="Marcar como terminado" aria-label="Marcar como terminado">✓</button>
         <button id="zoom-menos" class="icone" title="Diminuir zoom" aria-label="Diminuir zoom">−</button>
         <button id="zoom-mais" class="icone" title="Aumentar zoom" aria-label="Aumentar zoom">+</button>
         <button id="zoom-ajustar" class="icone" title="Ajustar à tela" aria-label="Ajustar à tela">⤢</button>
@@ -54,8 +70,10 @@
         <div id="fim" class="fim" hidden>
           <div class="fim-caixa">
             <p>🎉 Pronto!</p>
-            <button id="fim-baixar" class="botao">Baixar imagem</button>
+            <button id="fim-favoritar" class="botao">⭐ Guardar nos favoritos</button>
+            <button id="fim-baixar" class="botao secundario">Baixar imagem</button>
             <button id="fim-fechar" class="botao secundario">Ver de perto</button>
+            <small class="suave">Pintados fora dos favoritos saem da lista quando você pede mais desenhos.</small>
           </div>
         </div>
       </div>
@@ -71,5 +89,15 @@
       </aside>
     </div>
   </section>
+
+  <!-- Favoritos cheios -->
+  <dialog id="dlg-favoritos" class="dialogo">
+    <h3>Favoritos cheios (30/30)</h3>
+    <p class="suave">Para guardar este desenho, libere um espaço. Se quiser, baixe o desenho antes de removê-lo.</p>
+    <ul id="lista-favoritos" class="lista-favoritos"></ul>
+    <form method="dialog"><button class="botao secundario">Cancelar</button></form>
+  </dialog>
+
+  <div id="aviso" class="aviso" hidden></div>
 </body>
 </html>
